@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   createCategory,
@@ -32,6 +33,15 @@ export function CategoryCreateForm() {
           <p className="text-sm text-destructive" role="alert">{state.error}</p>
         ) : null}
       </div>
+      <div className="min-w-0 flex-1 space-y-2">
+        <Label htmlFor="category-description">Descripción (opcional)</Label>
+        <Textarea
+          id="category-description"
+          name="description"
+          maxLength={500}
+          placeholder="Qué productos pertenecen aquí"
+        />
+      </div>
       <Button type="submit" disabled={pending} className="sm:shrink-0">
         {pending ? "Agregando…" : "Agregar categoría"}
       </Button>
@@ -45,7 +55,7 @@ export function CategoryRow({ category }: { category: Category }) {
   return (
     <form
       action={formAction}
-      className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end"
+      className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto_auto] sm:items-end"
     >
       <input type="hidden" name="id" value={category.id} />
       <div className="min-w-0 space-y-2">
@@ -60,6 +70,16 @@ export function CategoryRow({ category }: { category: Category }) {
         {state.error ? (
           <p className="text-sm text-destructive" role="alert">{state.error}</p>
         ) : null}
+      </div>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor={`category-description-${category.id}`}>Descripción (opcional)</Label>
+        <Textarea
+          id={`category-description-${category.id}`}
+          name="description"
+          maxLength={500}
+          defaultValue={category.description ?? ""}
+          placeholder="Qué productos pertenecen aquí"
+        />
       </div>
       <Label className="flex min-h-10 items-center gap-2 text-sm text-muted-foreground">
         <input
