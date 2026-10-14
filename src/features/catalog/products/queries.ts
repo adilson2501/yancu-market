@@ -16,6 +16,11 @@ export type InventoryMovement = {
   actor_name: string | null;
 };
 
+export type ProductCategoryExample = {
+  name: string;
+  category_id: string;
+};
+
 type ProductRow = {
   id: string;
   name: string;
@@ -84,7 +89,7 @@ export async function listCategories(options?: {
   const supabase = await createClient();
   let query = supabase
     .from("categories")
-    .select("id, name, is_active, created_at, updated_at")
+    .select("id, name, description, is_active, created_at, updated_at")
     .order("name", { ascending: true })
     .order("id", { ascending: true });
 
@@ -99,6 +104,21 @@ export async function listCategories(options?: {
   }
 
   return (data ?? []) as Category[];
+}
+
+export async function listProductCategoryExamples(): Promise<ProductCategoryExample[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("name, category_id")
+    .eq("is_active", true)
+    .not("category_id", "is", null);
+
+  if (error) {
+    throw new Error("No se pudieron cargar los ejemplos de categorías.");
+  }
+
+  return (data ?? []) as ProductCategoryExample[];
 }
 
 export async function listProducts(search?: string): Promise<Product[]> {

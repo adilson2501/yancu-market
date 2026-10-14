@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/features/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeCategoryDescription } from "@/features/catalog/categories/normalization";
 
 export type CategoryFormState = {
   error?: string;
@@ -26,15 +27,19 @@ export async function createCategory(
   await requireAdmin();
 
   const name = normalizeName(formData.get("name"));
+  const description = normalizeCategoryDescription(formData.get("description"));
 
   if (!name) {
     return { error: "El nombre de la categoría es obligatorio." };
+  }
+  if (description && description.length > 500) {
+    return { error: "La descripción admite máximo 500 caracteres." };
   }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("categories")
-    .insert({ name, is_active: true });
+    .insert({ name, description, is_active: true });
 
   if (error) {
     if (error.code === "23505") {
@@ -55,6 +60,7 @@ export async function updateCategory(
 
   const id = String(formData.get("id") ?? "");
   const name = normalizeName(formData.get("name"));
+  const description = normalizeCategoryDescription(formData.get("description"));
   const isActive = formData.get("is_active") === "on";
 
   if (!id) {
@@ -63,11 +69,14 @@ export async function updateCategory(
   if (!name) {
     return { error: "El nombre de la categoría es obligatorio." };
   }
+  if (description && description.length > 500) {
+    return { error: "La descripción admite máximo 500 caracteres." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("categories")
-    .update({ name, is_active: isActive })
+    .update({ name, description, is_active: isActive })
     .eq("id", id);
 
   if (error) {

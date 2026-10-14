@@ -1,10 +1,16 @@
 import { requireAdmin } from "@/features/auth/session";
-import { listCategories } from "@/features/catalog/products/queries";
+import {
+  listCategories,
+  listProductCategoryExamples,
+} from "@/features/catalog/products/queries";
 import { ProductForm } from "@/app/admin/products/product-form";
 
 export default async function NewProductPage() {
   await requireAdmin();
-  const categories = await listCategories({ activeOnly: true });
+  const [categories, existingProducts] = await Promise.all([
+    listCategories({ activeOnly: true }),
+    listProductCategoryExamples(),
+  ]);
 
   return (
     <div className="flex flex-col bg-zinc-50 text-zinc-900">
@@ -15,7 +21,11 @@ export default async function NewProductPage() {
         </p>
 
         <div className="rounded-lg border border-zinc-200 bg-white p-6">
-          <ProductForm mode="create" categories={categories} />
+          <ProductForm
+            mode="create"
+            categories={categories}
+            existingProducts={existingProducts}
+          />
         </div>
       </main>
 

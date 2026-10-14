@@ -9,12 +9,17 @@ import {
 } from "@/features/catalog/products/actions";
 import type { Category } from "@/features/catalog/categories/types";
 import type { ProductFormValues, UnitType } from "@/features/catalog/products/types";
+import {
+  suggestProductCategory,
+} from "@/features/catalog/products/category-suggestion";
+import type { ProductCategoryExample } from "@/features/catalog/products/queries";
 
 type Props = {
   mode: "create" | "edit";
   categories: Category[];
   productId?: string;
   defaultValues?: Partial<ProductFormValues>;
+  existingProducts?: ProductCategoryExample[];
 };
 
 const emptyValues: ProductFormValues = {
@@ -28,7 +33,13 @@ const emptyValues: ProductFormValues = {
   is_active: true,
 };
 
-export function ProductForm({ mode, categories, productId, defaultValues }: Props) {
+export function ProductForm({
+  mode,
+  categories,
+  productId,
+  defaultValues,
+  existingProducts = [],
+}: Props) {
   const initialValues: ProductFormValues = {
     ...emptyValues,
     ...defaultValues,
@@ -37,6 +48,10 @@ export function ProductForm({ mode, categories, productId, defaultValues }: Prop
   const [unitType, setUnitType] = useState<UnitType>(
     initialValues.unit_type ?? "UNIT",
   );
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [categoryDraft, setCategoryDraft] = useState<string | null>(null);
+  const [categoryOverridden, setCategoryOverridden] = useState(mode === "edit");
+  const [categoryWasSuggested, setCategoryWasSuggested] = useState(false);
 
   const action =
     mode === "create"
@@ -50,9 +65,30 @@ export function ProductForm({ mode, categories, productId, defaultValues }: Prop
 
   const values = state.values ?? initialValues;
   const errors = state.fieldErrors ?? {};
+  const name = nameDraft ?? values.name;
+  const categoryId = categoryDraft ?? values.category_id;
+
+  function submitForm(formData: FormData) {
+    setNameDraft(null);
+    setCategoryDraft(null);
+    formAction(formData);
+  }
+
+  function handleNameBlur() {
+    if (mode !== "create" || categoryOverridden) return;
+
+    const suggestion = suggestProductCategory({
+      productName: name,
+      categories,
+      existingProducts,
+    });
+
+    setCategoryDraft(suggestion ?? "");
+    setCategoryWasSuggested(Boolean(suggestion));
+  }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={submitForm} className="space-y-5">
       {state.error ? (
         <p
           className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
@@ -71,7 +107,9 @@ export function ProductForm({ mode, categories, productId, defaultValues }: Prop
           name="name"
           type="text"
           required
-          defaultValue={values.name}
+          value={name}
+          onChange={(event) => setNameDraft(event.target.value)}
+          onBlur={handleNameBlur}
           placeholder="Ej.: Coca-Cola 500 ml"
           className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
         />
@@ -108,7 +146,12 @@ export function ProductForm({ mode, categories, productId, defaultValues }: Prop
         <select
           id="category_id"
           name="category_id"
-          defaultValue={values.category_id}
+          value={categoryId}
+          onChange={(event) => {
+            setCategoryOverridden(true);
+            setCategoryWasSuggested(false);
+            setCategoryDraft(event.target.value);
+          }}
           className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
         >
           <option value="">Sin categoría</option>
@@ -118,6 +161,9 @@ export function ProductForm({ mode, categories, productId, defaultValues }: Prop
             </option>
           ))}
         </select>
+        {categoryWasSuggested ? (
+          <p className="text-xs text-zinc-500">Categoría sugerida automáticamente</p>
+        ) : null}
         {errors.category_id ? (
           <p className="text-sm text-red-600">{errors.category_id}</p>
         ) : null}
