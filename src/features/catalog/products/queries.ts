@@ -85,13 +85,17 @@ function toProduct(row: ProductRow, stockMap: Map<string, string>): Product {
 
 export async function listCategories(options?: {
   activeOnly?: boolean;
+  order?: "name_asc" | "created_at_desc";
 }): Promise<Category[]> {
   const supabase = await createClient();
   let query = supabase
     .from("categories")
     .select("id, name, description, is_active, created_at, updated_at")
-    .order("name", { ascending: true })
-    .order("id", { ascending: true });
+    .order(
+      options?.order === "created_at_desc" ? "created_at" : "name",
+      { ascending: options?.order !== "created_at_desc" },
+    )
+    .order("id", { ascending: options?.order !== "created_at_desc" });
 
   if (options?.activeOnly) {
     query = query.eq("is_active", true);
