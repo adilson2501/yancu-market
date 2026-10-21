@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, FolderPlus } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -9,12 +8,12 @@ import { requireAdmin } from "@/features/auth/session";
 import { listCategories } from "@/features/catalog/products/queries";
 import {
   CategoryCreateForm,
-  CategoryRow,
 } from "@/app/admin/categories/category-forms";
+import { CategoryAdminList } from "@/app/admin/categories/category-list";
 
 export default async function CategoriesPage() {
   await requireAdmin();
-  const categories = await listCategories();
+  const categories = await listCategories({ order: "created_at_desc" });
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -53,18 +52,9 @@ export default async function CategoriesPage() {
           <CardTitle className="text-base">Categorías registradas</CardTitle>
           <CardDescription>Actualiza el nombre o disponibilidad de cada categoría.</CardDescription>
         </CardHeader>
-        {categories.length === 0 ? (
-          <CardContent className="py-10 text-center">
-            <Badge variant="secondary">Catálogo sin categorías</Badge>
-            <p className="mt-3 text-sm text-muted-foreground">Crea la primera categoría para comenzar a organizar productos.</p>
-          </CardContent>
-        ) : (
-          <div className="divide-y divide-border">
-            {categories.map((category) => (
-              <CategoryRow key={category.id} category={category} />
-            ))}
-          </div>
-        )}
+        <CardContent className="pt-0">
+          <CategoryAdminList categories={categories} />
+        </CardContent>
       </Card>
     </div>
   );
